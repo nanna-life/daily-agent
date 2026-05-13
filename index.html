@@ -13,6 +13,7 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { background:#0a0a0a; font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif; overscroll-behavior:none; }
@@ -26,42 +27,41 @@
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-// ── 🔑 여기에 Anthropic API 키 입력 ──────────────────────────────────────────
-// https://console.anthropic.com 에서 발급
-const ANTHROPIC_API_KEY = "여기에_API_키_입력";
-// ─────────────────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = "https://rssctngnhoijeqphwxoz.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzc2N0bmduaG9pamVxcGh3eG96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjQxODAsImV4cCI6MjA5NDE0MDE4MH0.l8TolzRBH0r11HSfPf4QIU5HXAywDxF7rcuy6_vo3qY";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const USER_ID = "nanna";
 
 const DAILY_SKELETON = [
-  { time:"기상 즉시",   text:"커튼 열기 + 햇빛 15분",           tag:"햇빛", tagColor:"#a0d0ff", tagBg:"#1a1a2e" },
-  { time:"기상 +5분",   text:"물 500ml 원샷",                  tag:"수분", tagColor:"#90e090", tagBg:"#1e3a1e" },
-  { time:"기상 +30분",  text:"냉수 샤워 30초 — 도파민 정상화",   tag:"각성", tagColor:"#ffb070", tagBg:"#3a1a00" },
-  { time:"오전",        text:"90분 몰입 블록 — 알림 전체 차단",  tag:"몰입", tagColor:"#e090e0", tagBg:"#2a0a2a" },
-  { time:"점심 식사",   text:"채소→단백질→탄수화물 순서",         tag:"식사", tagColor:"#90e090", tagBg:"#1e3a1e" },
-  { time:"점심 후",     text:"20분 걷기 — 스마트폰 없이",         tag:"걷기", tagColor:"#ffb070", tagBg:"#3a1a00" },
-  { time:"오후",        text:"90분 몰입 블록 2회차",             tag:"몰입", tagColor:"#e090e0", tagBg:"#2a0a2a" },
-  { time:"저녁",        text:"단백질 위주 — 취침 3시간 전 마무리", tag:"식사", tagColor:"#90e090", tagBg:"#1e3a1e" },
-  { time:"취침 -1시간", text:"스마트폰 잠금박스 투입",             tag:"수면", tagColor:"#a0d0ff", tagBg:"#1a1a2e" },
-  { time:"기상·취침",   text:"매일 동일 시간 ±30분 이내",          tag:"리듬", tagColor:"#e0e080", tagBg:"#2a2a00" },
+  {time:"기상 즉시",   text:"커튼 열기 + 햇빛 15분",            tag:"햇빛", tagColor:"#a0d0ff", tagBg:"#1a1a2e"},
+  {time:"기상 +5분",   text:"물 500ml 원샷",                   tag:"수분", tagColor:"#90e090", tagBg:"#1e3a1e"},
+  {time:"기상 +30분",  text:"냉수 샤워 30초 — 도파민 정상화",    tag:"각성", tagColor:"#ffb070", tagBg:"#3a1a00"},
+  {time:"오전",        text:"90분 몰입 블록 — 알림 전체 차단",   tag:"몰입", tagColor:"#e090e0", tagBg:"#2a0a2a"},
+  {time:"점심 식사",   text:"채소→단백질→탄수화물 순서",          tag:"식사", tagColor:"#90e090", tagBg:"#1e3a1e"},
+  {time:"점심 후",     text:"20분 걷기 — 스마트폰 없이",          tag:"걷기", tagColor:"#ffb070", tagBg:"#3a1a00"},
+  {time:"오후",        text:"90분 몰입 블록 2회차",              tag:"몰입", tagColor:"#e090e0", tagBg:"#2a0a2a"},
+  {time:"저녁",        text:"단백질 위주 — 취침 3시간 전 마무리",  tag:"식사", tagColor:"#90e090", tagBg:"#1e3a1e"},
+  {time:"취침 -1시간", text:"스마트폰 잠금박스 투입",              tag:"수면", tagColor:"#a0d0ff", tagBg:"#1a1a2e"},
+  {time:"기상·취침",   text:"매일 동일 시간 ±30분 이내",           tag:"리듬", tagColor:"#e0e080", tagBg:"#2a2a00"},
 ];
 
 const WEEK_PLAN = [
-  { day:"월", theme:"🔥 엔진 점화",  accent:true,  items:["06:00 기상 + 햇빛 + 물","냉수 샤워 30초","아침: 달걀+채소+밥½","08:00 첫 몰입 90분","점심 후 20분 걷기","이번 주 숫자 목표 기록","20:00 Zone2 걷기 30분","23:00 취침"] },
-  { day:"화", theme:"💪 신체 강화",  accent:false, items:["06:00 기상 루틴","아침: 달걀3개+그릭요거트","08:00 몰입 블록 1","10:00 근력 운동 45~60분","스쿼트·푸시업·플랭크 3세트","점심 단백질 +20g 추가","독서 30분","23:00 취침"] },
-  { day:"수", theme:"🤝 관계 충전",  accent:false, items:["06:00 기상 루틴","오전: 가벼운 정리 작업","점심: 지인과 대면 식사","오후: 미팅·협업 배치","저녁 후 멍 때리기 20분","스마트폰 없이 샤워","DMN 활성 (아이디어 시간)","23:00 취침"] },
-  { day:"목", theme:"🧠 깊은 몰입",  accent:true,  items:["06:00 기상 루틴","08:00 3시간 몰입 블록","가장 어렵고 중요한 것","점심 후 25분 걷기","오후 몰입 블록 2","저녁: 근력 운동 2회차","(하체 중심)","23:00 취침"] },
-  { day:"금", theme:"✅ 마무리·점검", accent:false, items:["06:00 기상 루틴","오전: 미완성 작업 마무리","10:00 주간 숫자 점검 5분","오후: 다음 주 준비","월요일 할 일 1개 세팅","저녁: 지인 대면 만남","옥시토신 충전","24:00 취침 (30분 허용)"] },
-  { day:"토", theme:"🌿 신체+여백",  accent:false, items:["07:00 기상 (평일 +1h 이내)","08:00 Zone2 러닝 40분","심박 120~130bpm 유지","오전: 개인 프로젝트","오후: 완전한 여백 타임","스마트폰 없이 2시간","저녁: 가족·친구 대면","24:00 취침"] },
-  { day:"일", theme:"🔄 회복·준비",  accent:false, items:["07:30 기상 느리게","09:00 가벼운 산책 30분","10:00 주간 리뷰 15분","점심: 간헐적 단식 도전","오후: 완전 휴식","저녁 7시: 월요일 세팅","책상 정리 + 할 일 메모","22:30 취침 준비"] },
+  {day:"월",theme:"🔥 엔진 점화",  accent:true,  items:["06:00 기상 + 햇빛 + 물","냉수 샤워 30초","아침: 달걀+채소+밥½","08:00 첫 몰입 90분","점심 후 20분 걷기","이번 주 숫자 목표 기록","20:00 Zone2 걷기 30분","23:00 취침"]},
+  {day:"화",theme:"💪 신체 강화",  accent:false, items:["06:00 기상 루틴","아침: 달걀3개+그릭요거트","08:00 몰입 블록 1","10:00 근력 운동 45~60분","스쿼트·푸시업·플랭크 3세트","점심 단백질 +20g 추가","독서 30분","23:00 취침"]},
+  {day:"수",theme:"🤝 관계 충전",  accent:false, items:["06:00 기상 루틴","오전: 가벼운 정리 작업","점심: 지인과 대면 식사","오후: 미팅·협업 배치","저녁 후 멍 때리기 20분","스마트폰 없이 샤워","DMN 활성 (아이디어 시간)","23:00 취침"]},
+  {day:"목",theme:"🧠 깊은 몰입",  accent:true,  items:["06:00 기상 루틴","08:00 3시간 몰입 블록","가장 어렵고 중요한 것","점심 후 25분 걷기","오후 몰입 블록 2","저녁: 근력 운동 2회차","(하체 중심)","23:00 취침"]},
+  {day:"금",theme:"✅ 마무리·점검", accent:false, items:["06:00 기상 루틴","오전: 미완성 작업 마무리","10:00 주간 숫자 점검 5분","오후: 다음 주 준비","월요일 할 일 1개 세팅","저녁: 지인 대면 만남","옥시토신 충전","24:00 취침 (30분 허용)"]},
+  {day:"토",theme:"🌿 신체+여백",  accent:false, items:["07:00 기상 (평일 +1h 이내)","08:00 Zone2 러닝 40분","심박 120~130bpm 유지","오전: 개인 프로젝트","오후: 완전한 여백 타임","스마트폰 없이 2시간","저녁: 가족·친구 대면","24:00 취침"]},
+  {day:"일",theme:"🔄 회복·준비",  accent:false, items:["07:30 기상 느리게","09:00 가벼운 산책 30분","10:00 주간 리뷰 15분","점심: 간헐적 단식 도전","오후: 완전 휴식","저녁 7시: 월요일 세팅","책상 정리 + 할 일 메모","22:30 취침 준비"]},
 ];
 
 const MEAL_GUIDE = [
-  { title:"🌅 아침", time:"기상 후 30~60분", items:["달걀 스크램블 2개 + 나물 + 밥 ½공기","그릭 요거트 200g + 블루베리 + 아몬드","두부구이 + 시금치볶음 + 현미밥 ½공기","→ 단백질 체중×1.2g 매 끼니 필수"] },
-  { title:"☀️ 점심", time:"채소→단백질→탄수화물 순서", items:["쌈밥 — 쌈채소 먼저, 고기 중간, 밥 마지막","닭가슴살 샐러드 + 드레싱 적게 + 잡곡밥","된장찌개 + 나물 2가지 + 생선구이 + 밥 ½","→ 운동일: 단백질 +20g 추가 필수"] },
-  { title:"🌙 저녁", time:"취침 3시간 전 마무리", items:["고등어구이 + 미역국 + 나물 + 밥 소량","닭볶음탕 + 채소 + 밥 ½공기","두부김치 + 계란국 + 밥 (탄수화물 최소화)","간식: 삶은 달걀 1개 + 아몬드 15알만"] },
+  {title:"🌅 아침", time:"기상 후 30~60분",        items:["달걀 스크램블 2개 + 나물 + 밥 ½공기","그릭 요거트 200g + 블루베리 + 아몬드","두부구이 + 시금치볶음 + 현미밥 ½공기","→ 단백질 체중×1.2g 매 끼니 필수"]},
+  {title:"☀️ 점심", time:"채소→단백질→탄수화물 순서",items:["쌈밥 — 쌈채소 먼저, 고기 중간, 밥 마지막","닭가슴살 샐러드 + 드레싱 적게 + 잡곡밥","된장찌개 + 나물 2가지 + 생선구이 + 밥 ½","→ 운동일: 단백질 +20g 추가 필수"]},
+  {title:"🌙 저녁", time:"취침 3시간 전 마무리",     items:["고등어구이 + 미역국 + 나물 + 밥 소량","닭볶음탕 + 채소 + 밥 ½공기","두부김치 + 계란국 + 밥 (탄수화물 최소화)","간식: 삶은 달걀 1개 + 아몬드 15알만"]},
 ];
 
 const PRINCIPLES = [
@@ -78,62 +78,71 @@ const PRINCIPLES = [
 
 const DEFAULT_TASKS = {
   routine:[
-    {id:1, text:"햇빛 15분 (아침)", done:false},
-    {id:2, text:"물 500ml 원샷", done:false},
-    {id:3, text:"냉수 샤워 30초", done:false},
-    {id:4, text:"오전 몰입 블록 90분", done:false},
-    {id:5, text:"점심 후 걷기 20분", done:false},
-    {id:6, text:"취침 1시간 전 스마트폰 차단", done:false},
+    {id:1,text:"햇빛 15분 (아침)",done:false},
+    {id:2,text:"물 500ml 원샷",done:false},
+    {id:3,text:"냉수 샤워 30초",done:false},
+    {id:4,text:"오전 몰입 블록 90분",done:false},
+    {id:5,text:"점심 후 걷기 20분",done:false},
+    {id:6,text:"취침 1시간 전 스마트폰 차단",done:false},
   ],
   health:[
-    {id:7, text:"채소→단백질→탄수 식사 순서", done:false},
-    {id:8, text:"단백질 목표량 달성", done:false},
-    {id:9, text:"운동 (근력 or Zone2)", done:false},
+    {id:7,text:"채소→단백질→탄수 식사 순서",done:false},
+    {id:8,text:"단백질 목표량 달성",done:false},
+    {id:9,text:"운동 (근력 or Zone2)",done:false},
   ],
   finance:[
-    {id:10, text:"오늘 지출 기록", done:false},
-    {id:11, text:"포트폴리오 확인 (5분)", done:false},
-    {id:12, text:"시장·뉴스 체크", done:false},
+    {id:10,text:"오늘 지출 기록",done:false},
+    {id:11,text:"포트폴리오 확인 (5분)",done:false},
+    {id:12,text:"시장·뉴스 체크",done:false},
   ],
   business:[
-    {id:13, text:"블로그 포스팅 or 초안", done:false},
-    {id:14, text:"임대 관련 확인", done:false},
-    {id:15, text:"비즈니스 아이디어 메모 1개", done:false},
+    {id:13,text:"블로그 포스팅 or 초안",done:false},
+    {id:14,text:"임대 관련 확인",done:false},
+    {id:15,text:"비즈니스 아이디어 메모 1개",done:false},
   ],
 };
 
 const AREAS = [
-  {id:"routine",  label:"⏰ 루틴",    color:"#a0d0ff", dim:"#1a1a2e"},
-  {id:"health",   label:"💪 건강",    color:"#90e090", dim:"#1e3a1e"},
-  {id:"finance",  label:"📈 재정",    color:"#facc15", dim:"#2a2000"},
-  {id:"business", label:"🏢 비즈니스", color:"#e090e0", dim:"#2a0a2a"},
+  {id:"routine",  label:"⏰ 루틴",    color:"#a0d0ff"},
+  {id:"health",   label:"💪 건강",    color:"#90e090"},
+  {id:"finance",  label:"📈 재정",    color:"#facc15"},
+  {id:"business", label:"🏢 비즈니스", color:"#e090e0"},
 ];
 
-const DAYS = ["일","월","화","수","목","금","토"];
-function getTodayKey() { return new Date().toISOString().slice(0,10); }
-function getStreak(history) {
-  let streak=0, d=new Date(); d.setDate(d.getDate()-1);
-  while(true) {
-    const key=d.toISOString().slice(0,10);
-    if(history[key]?.completed){streak++;d.setDate(d.getDate()-1);}else break;
-  }
+const DAYS=["일","월","화","수","목","금","토"];
+function getTodayKey(){return new Date().toISOString().slice(0,10);}
+function getStreak(history){
+  let streak=0,d=new Date();d.setDate(d.getDate()-1);
+  while(true){const key=d.toISOString().slice(0,10);if(history[key]?.completed){streak++;d.setDate(d.getDate()-1);}else break;}
   return streak;
 }
 
-function App() {
-  const [tasks,setTasks] = useState(()=>{ try{return JSON.parse(localStorage.getItem("da_tasks"))||DEFAULT_TASKS;}catch{return DEFAULT_TASKS;} });
-  const [history,setHistory] = useState(()=>{ try{return JSON.parse(localStorage.getItem("da_history"))||{};}catch{return {};} });
-  const [tab,setTab] = useState("today");
-  const [planTab,setPlanTab] = useState("week");
-  const [activeArea,setActiveArea] = useState("routine");
-  const [brief,setBrief] = useState("");
-  const [briefLoading,setBriefLoading] = useState(false);
-  const [newTask,setNewTask] = useState("");
-  const [todaySaved,setTodaySaved] = useState(false);
-  const [apiKey,setApiKey] = useState(()=>localStorage.getItem("da_apikey")||ANTHROPIC_API_KEY);
-  const [showKeyInput,setShowKeyInput] = useState(false);
+async function dbLoad(){
+  const {data}=await sb.from("daily_data").select("*").eq("user_id",USER_ID).single();
+  return data||null;
+}
+async function dbSave(tasks,history){
+  const {data:ex}=await sb.from("daily_data").select("id").eq("user_id",USER_ID).single();
+  if(ex){await sb.from("daily_data").update({tasks,history,updated_at:new Date().toISOString()}).eq("user_id",USER_ID);}
+  else{await sb.from("daily_data").insert({user_id:USER_ID,tasks,history});}
+}
 
-  const todayKey=getTodayKey(), now=new Date();
+function App(){
+  const [tasks,setTasks]=useState(DEFAULT_TASKS);
+  const [history,setHistory]=useState({});
+  const [tab,setTab]=useState("today");
+  const [planTab,setPlanTab]=useState("week");
+  const [activeArea,setActiveArea]=useState("routine");
+  const [brief,setBrief]=useState("");
+  const [briefLoading,setBriefLoading]=useState(false);
+  const [newTask,setNewTask]=useState("");
+  const [todaySaved,setTodaySaved]=useState(false);
+  const [sync,setSync]=useState("idle"); // idle|syncing|ok|error
+  const [apiKey,setApiKey]=useState(()=>localStorage.getItem("da_apikey")||"");
+  const [showKey,setShowKey]=useState(false);
+  const [loaded,setLoaded]=useState(false);
+
+  const todayKey=getTodayKey(),now=new Date();
   const dateStr=`${now.getMonth()+1}월 ${now.getDate()}일 (${DAYS[now.getDay()]})`;
   const allTasks=Object.values(tasks).flat();
   const doneTasks=allTasks.filter(t=>t.done).length;
@@ -142,20 +151,44 @@ function App() {
   const streak=getStreak(history);
   const area=AREAS.find(a=>a.id===activeArea);
 
-  useEffect(()=>{localStorage.setItem("da_tasks",JSON.stringify(tasks));},[tasks]);
-  useEffect(()=>{localStorage.setItem("da_history",JSON.stringify(history));},[history]);
+  // 초기 로드
+  useEffect(()=>{
+    (async()=>{
+      setSync("syncing");
+      try{
+        const data=await dbLoad();
+        if(data){
+          if(data.tasks) setTasks(data.tasks);
+          if(data.history) setHistory(data.history);
+          setSync("ok");
+        }else{setSync("idle");}
+      }catch{setSync("error");}
+      setLoaded(true);
+    })();
+  },[]);
 
-  function toggleTask(aId,tId){setTasks(p=>({...p,[aId]:p[aId].map(t=>t.id===tId?{...t,done:!t.done}:t)}));}
-  function addTask(aId){if(!newTask.trim())return;setTasks(p=>({...p,[aId]:[...p[aId],{id:Date.now(),text:newTask.trim(),done:false}]}));setNewTask("");}
-  function removeTask(aId,tId){setTasks(p=>({...p,[aId]:p[aId].filter(t=>t.id!==tId)}));}
-  function saveDay(){
-    setHistory(p=>({...p,[todayKey]:{date:todayKey,completed:progress>=70,progress,tasks:JSON.parse(JSON.stringify(tasks))}}));
+  // 변경 시 자동 저장
+  useEffect(()=>{
+    if(!loaded)return;
+    setSync("syncing");
+    const t=setTimeout(async()=>{
+      try{await dbSave(tasks,history);setSync("ok");}
+      catch{setSync("error");}
+    },1000);
+    return()=>clearTimeout(t);
+  },[tasks,history]);
+
+  const toggleTask=(aId,tId)=>setTasks(p=>({...p,[aId]:p[aId].map(t=>t.id===tId?{...t,done:!t.done}:t)}));
+  const addTask=(aId)=>{if(!newTask.trim())return;setTasks(p=>({...p,[aId]:[...p[aId],{id:Date.now(),text:newTask.trim(),done:false}]}));setNewTask("");};
+  const removeTask=(aId,tId)=>setTasks(p=>({...p,[aId]:p[aId].filter(t=>t.id!==tId)}));
+  const saveDay=()=>{
+    setHistory(p=>({...p,[todayKey]:{date:todayKey,completed:progress>=70,progress}}));
     setTodaySaved(true);
     setTasks(p=>{const r={};for(const k in p)r[k]=p[k].map(t=>({...t,done:false}));return r;});
-  }
+  };
 
   async function fetchBrief(){
-    if(!apiKey||apiKey==="여기에_API_키_입력"){setShowKeyInput(true);return;}
+    if(!apiKey){setShowKey(true);return;}
     setBriefLoading(true);setBrief("");setTab("brief");
     const done=allTasks.filter(t=>t.done).map(t=>t.text);
     const pending=allTasks.filter(t=>!t.done).map(t=>t.text);
@@ -164,17 +197,13 @@ function App() {
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:
-          `당신은 하루 비서입니다. 간결하고 실용적인 브리핑을 한국어로 작성해주세요.\n날짜: ${dateStr} / 연속 달성: ${streak}일 / 진행률: ${progress}%\n완료: ${done.join(", ")||"없음"}\n미완료: ${pending.join(", ")||"없음"}\n영역: 원시인 루틴, 건강·운동, 재정·투자, 비즈니스(블로그·임대)\n\n형식:\n1. 오늘 한 줄 평가\n2. 지금 해야 할 TOP 2\n3. 내일 조언 1개\n\n총 150자 이내.`
+          `하루 비서로서 간결한 브리핑을 한국어로 작성해주세요.\n날짜: ${dateStr} / 연속달성: ${streak}일 / 진행률: ${progress}%\n완료: ${done.join(", ")||"없음"}\n미완료: ${pending.join(", ")||"없음"}\n영역: 원시인루틴, 건강·운동, 재정·투자, 비즈니스(블로그·임대)\n\n1. 오늘 한줄평가\n2. 지금 해야할 TOP 2\n3. 내일 조언 1개\n\n150자 이내.`
         }]})
       });
       const data=await res.json();
       setBrief(data.content?.find(b=>b.type==="text")?.text||"브리핑 실패");
     }catch(e){setBrief("오류: "+e.message);}
     setBriefLoading(false);
-  }
-
-  function saveApiKey(key){
-    setApiKey(key);localStorage.setItem("da_apikey",key);setShowKeyInput(false);
   }
 
   const last7=Array.from({length:7},(_,i)=>{
@@ -184,59 +213,69 @@ function App() {
   });
 
   const W={wrap:{width:"100%",maxWidth:500,padding:"0 18px",margin:"0 auto"}};
+  const syncColor={ok:"#4ade80",syncing:"#facc15",error:"#f87171",idle:"#333"};
+  const syncText={ok:"● 동기화됨",syncing:"● 저장 중",error:"● 오류",idle:""};
 
-  return (
+  if(!loaded)return(
+    <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14}}>
+      <div style={{fontSize:30,color:"#facc15",animation:"spin 1.5s linear infinite"}}>✦</div>
+      <div style={{fontSize:11,color:"#333",letterSpacing:3}}>LOADING</div>
+    </div>
+  );
+
+  return(
     <div style={{minHeight:"100vh",background:"#0a0a0a",color:"#e8e8e0",paddingBottom:80}}>
 
       {/* API Key Modal */}
-      {showKeyInput&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#111",border:"1px solid #333",borderRadius:16,padding:24,width:"100%",maxWidth:360}}>
-            <div style={{fontSize:14,fontWeight:700,marginBottom:8,color:"#f0f0e8"}}>Anthropic API 키 입력</div>
-            <div style={{fontSize:11,color:"#666",marginBottom:16,lineHeight:1.6}}>
+      {showKey&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#111",border:"1px solid #2a2a2a",borderRadius:16,padding:24,width:"100%",maxWidth:360}}>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Anthropic API 키</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:16,lineHeight:1.7}}>
               👉 <a href="https://console.anthropic.com" target="_blank" style={{color:"#facc15"}}>console.anthropic.com</a> 에서 발급<br/>
-              이 기기에만 저장돼요 (localStorage)
+              이 기기 브라우저에만 저장돼요
             </div>
-            <input id="apiInput" type="password" placeholder="sk-ant-..." defaultValue={apiKey!=="여기에_API_키_입력"?apiKey:""}
-              style={{width:"100%",background:"#1a1a1a",border:"1px solid #333",borderRadius:8,color:"#ccc",padding:"10px 12px",fontSize:13,outline:"none",marginBottom:12}}/>
+            <input id="apiInput" type="password" placeholder="sk-ant-..." defaultValue={apiKey}
+              style={{width:"100%",background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,color:"#ccc",padding:"10px 12px",fontSize:13,outline:"none",marginBottom:12}}/>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setShowKeyInput(false)} style={{flex:1,padding:"10px",background:"transparent",border:"1px solid #333",borderRadius:8,color:"#666",cursor:"pointer",fontSize:12}}>취소</button>
-              <button onClick={()=>saveApiKey(document.getElementById("apiInput").value.trim())} style={{flex:2,padding:"10px",background:"#facc15",border:"none",borderRadius:8,color:"#000",cursor:"pointer",fontSize:12,fontWeight:700}}>저장</button>
+              <button onClick={()=>setShowKey(false)} style={{flex:1,padding:"10px",background:"transparent",border:"1px solid #2a2a2a",borderRadius:8,color:"#555",cursor:"pointer",fontSize:12}}>취소</button>
+              <button onClick={()=>{const k=document.getElementById("apiInput").value.trim();setApiKey(k);localStorage.setItem("da_apikey",k);setShowKey(false);}} style={{flex:2,padding:"10px",background:"#facc15",border:"none",borderRadius:8,color:"#000",cursor:"pointer",fontSize:12,fontWeight:700}}>저장</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div style={{...W.wrap,paddingTop:32}}>
+      <div style={{...W.wrap,paddingTop:28}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:9,letterSpacing:3,color:"#333",textTransform:"uppercase",marginBottom:3}}>Daily Agent · 원시인 루틴</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+              <span style={{fontSize:9,letterSpacing:2,color:"#2a2a2a",textTransform:"uppercase"}}>Daily Agent</span>
+              <span style={{fontSize:9,color:syncColor[sync]}}>{syncText[sync]}</span>
+            </div>
             <div style={{fontSize:22,fontWeight:700,color:"#f0f0e8",letterSpacing:-0.5}}>{dateStr}</div>
           </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:9,color:"#333",marginBottom:2}}>연속 달성</div>
+            <div style={{fontSize:9,color:"#2a2a2a",marginBottom:2}}>연속 달성</div>
             <div style={{fontSize:30,fontWeight:800,color:"#facc15",lineHeight:1}}>{streak}<span style={{fontSize:12,marginLeft:2}}>일</span></div>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div style={{marginTop:18}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,fontSize:11,color:"#555"}}>
+        <div style={{marginTop:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,fontSize:11,color:"#444"}}>
             <span>오늘 진행률</span>
             <span style={{color:progress>=70?"#4ade80":"#facc15",fontWeight:700}}>{doneTasks}/{totalTasks} · {progress}%</span>
           </div>
           <div style={{height:5,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${progress}%`,background:progress>=70?"linear-gradient(90deg,#4ade80,#22d3ee)":"linear-gradient(90deg,#facc15,#f97316)",borderRadius:99,transition:"width 0.5s ease"}}/>
+            <div style={{height:"100%",width:`${progress}%`,background:progress>=70?"linear-gradient(90deg,#4ade80,#22d3ee)":"linear-gradient(90deg,#facc15,#f97316)",borderRadius:99,transition:"width 0.5s"}}/>
           </div>
         </div>
 
-        {/* 7-day strip */}
         <div style={{display:"flex",gap:5,marginTop:14,justifyContent:"center"}}>
           {last7.map(({key,day,data})=>(
             <div key={key} style={{textAlign:"center"}}>
-              <div style={{fontSize:9,color:"#333",marginBottom:3}}>{day}</div>
-              <div style={{width:34,height:34,borderRadius:8,background:data?.completed?"#4ade80":data?"#f97316":"#141414",border:key===todayKey?"2px solid #facc15":"2px solid transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:data?"#000":"#222",fontWeight:700}}>
+              <div style={{fontSize:9,color:"#2a2a2a",marginBottom:3}}>{day}</div>
+              <div style={{width:34,height:34,borderRadius:8,background:data?.completed?"#4ade80":data?"#f97316":"#141414",border:key===todayKey?"2px solid #facc15":"2px solid transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:data?"#000":"#1e1e1e",fontWeight:700}}>
                 {data?`${data.progress}`:"·"}
               </div>
             </div>
@@ -245,7 +284,7 @@ function App() {
       </div>
 
       {/* Nav */}
-      <div style={{display:"flex",gap:0,marginTop:20,background:"#111",borderRadius:10,overflow:"hidden",border:"1px solid #1a1a1a",width:"calc(100% - 36px)",maxWidth:500,margin:"20px auto 0"}}>
+      <div style={{display:"flex",marginTop:18,background:"#111",borderRadius:10,overflow:"hidden",border:"1px solid #1a1a1a",width:"calc(100% - 36px)",maxWidth:500,margin:"18px auto 0"}}>
         {[["today","오늘"],["plan","루틴 플랜"],["brief","AI 브리핑"],["history","기록"]].map(([v,label])=>(
           <button key={v} onClick={()=>v==="brief"?fetchBrief():setTab(v)} style={{flex:1,padding:"11px 0",border:"none",cursor:"pointer",fontSize:12,fontWeight:600,background:tab===v?"#facc15":"transparent",color:tab===v?"#000":"#444",transition:"all 0.2s"}}>
             {label}
@@ -253,17 +292,13 @@ function App() {
         ))}
       </div>
 
-      {/* ── TAB: 오늘 ── */}
+      {/* 오늘 */}
       {tab==="today"&&(
         <div style={{...W.wrap,marginTop:18}}>
           <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4}}>
             {AREAS.map(a=>{
               const done=tasks[a.id].filter(t=>t.done).length,total=tasks[a.id].length;
-              return(
-                <button key={a.id} onClick={()=>setActiveArea(a.id)} style={{flexShrink:0,padding:"7px 12px",borderRadius:8,border:"none",cursor:"pointer",background:activeArea===a.id?a.color:"#141414",color:activeArea===a.id?"#000":"#444",fontSize:12,fontWeight:700,transition:"all 0.2s",whiteSpace:"nowrap"}}>
-                  {a.label} {done}/{total}
-                </button>
-              );
+              return(<button key={a.id} onClick={()=>setActiveArea(a.id)} style={{flexShrink:0,padding:"7px 12px",borderRadius:8,border:"none",cursor:"pointer",background:activeArea===a.id?a.color:"#141414",color:activeArea===a.id?"#000":"#444",fontSize:12,fontWeight:700,transition:"all 0.2s",whiteSpace:"nowrap"}}>{a.label} {done}/{total}</button>);
             })}
           </div>
           <div style={{background:"#111",borderRadius:14,border:"1px solid #1a1a1a",overflow:"hidden"}}>
@@ -273,7 +308,7 @@ function App() {
                   {task.done&&<span style={{fontSize:11,color:"#000",fontWeight:900}}>✓</span>}
                 </div>
                 <span style={{flex:1,fontSize:13,color:task.done?"#333":"#ccc",textDecoration:task.done?"line-through":"none",transition:"all 0.15s"}}>{task.text}</span>
-                <button onClick={()=>removeTask(activeArea,task.id)} style={{background:"none",border:"none",color:"#252525",cursor:"pointer",fontSize:18,padding:"0 2px",lineHeight:1}}>×</button>
+                <button onClick={()=>removeTask(activeArea,task.id)} style={{background:"none",border:"none",color:"#252525",cursor:"pointer",fontSize:18,padding:"0 4px",lineHeight:1}}>×</button>
               </div>
             ))}
             <div style={{display:"flex",padding:"9px 11px",gap:7,borderTop:"1px solid #161616"}}>
@@ -282,24 +317,22 @@ function App() {
             </div>
           </div>
           {!todaySaved&&progress>0&&(
-            <button onClick={saveDay} style={{width:"100%",marginTop:12,padding:"13px",background:"#111",border:"1px solid #222",borderRadius:12,color:"#444",fontSize:12,cursor:"pointer",transition:"all 0.2s"}}
+            <button onClick={saveDay} style={{width:"100%",marginTop:12,padding:"13px",background:"#111",border:"1px solid #222",borderRadius:12,color:"#444",fontSize:12,cursor:"pointer"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="#facc15";e.currentTarget.style.color="#facc15";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="#222";e.currentTarget.style.color="#444";}}>
               오늘 마무리 & 기록 저장 →
             </button>
           )}
-          {todaySaved&&<div style={{textAlign:"center",marginTop:12,color:"#4ade80",fontSize:12}}>✓ 오늘 기록 저장됨</div>}
+          {todaySaved&&<div style={{textAlign:"center",marginTop:12,color:"#4ade80",fontSize:12}}>✓ 저장 완료 · 모든 기기에 동기화됨</div>}
         </div>
       )}
 
-      {/* ── TAB: 루틴 플랜 ── */}
+      {/* 루틴 플랜 */}
       {tab==="plan"&&(
         <div style={{...W.wrap,marginTop:18}}>
-          <div style={{display:"flex",gap:0,marginBottom:16,background:"#111",borderRadius:8,overflow:"hidden",border:"1px solid #1a1a1a"}}>
+          <div style={{display:"flex",marginBottom:16,background:"#111",borderRadius:8,overflow:"hidden",border:"1px solid #1a1a1a"}}>
             {[["week","요일 플랜"],["meal","식단"],["skeleton","매일 뼈대"],["principles","원칙"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setPlanTab(v)} style={{flex:1,padding:"8px 0",border:"none",cursor:"pointer",fontSize:11,fontWeight:600,background:planTab===v?"#1e1e1e":"transparent",color:planTab===v?"#facc15":"#444",borderBottom:planTab===v?"2px solid #facc15":"2px solid transparent",transition:"all 0.2s"}}>
-                {l}
-              </button>
+              <button key={v} onClick={()=>setPlanTab(v)} style={{flex:1,padding:"8px 0",border:"none",cursor:"pointer",fontSize:11,fontWeight:600,background:planTab===v?"#1e1e1e":"transparent",color:planTab===v?"#facc15":"#444",borderBottom:planTab===v?"2px solid #facc15":"2px solid transparent",transition:"all 0.2s"}}>{l}</button>
             ))}
           </div>
 
@@ -308,15 +341,11 @@ function App() {
               {WEEK_PLAN.map(({day,theme,accent,items})=>(
                 <div key={day} style={{background:"#111",borderRadius:12,border:`1px solid ${accent?"#c8391a":"#1a1a1a"}`,overflow:"hidden"}}>
                   <div style={{background:accent?"#c8391a":"#181818",color:"#fff",padding:"7px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontWeight:800,fontSize:14,letterSpacing:1}}>{day}요일</span>
-                    <span style={{fontSize:9,color:accent?"rgba(255,255,255,0.75)":"#444"}}>{theme}</span>
+                    <span style={{fontWeight:800,fontSize:14}}>{day}요일</span>
+                    <span style={{fontSize:9,color:accent?"rgba(255,255,255,0.7)":"#444"}}>{theme}</span>
                   </div>
                   <div style={{padding:"10px 12px"}}>
-                    {items.map((item,i)=>(
-                      <div key={i} style={{fontSize:11,lineHeight:1.85,color:"#777",display:"flex",gap:5}}>
-                        <span style={{color:"#c8391a",fontSize:9,marginTop:3,flexShrink:0}}>▸</span>{item}
-                      </div>
-                    ))}
+                    {items.map((item,i)=>(<div key={i} style={{fontSize:11,lineHeight:1.85,color:"#666",display:"flex",gap:5}}><span style={{color:"#c8391a",fontSize:9,marginTop:3,flexShrink:0}}>▸</span>{item}</div>))}
                   </div>
                 </div>
               ))}
@@ -332,12 +361,7 @@ function App() {
                     <span style={{fontSize:10,color:"#444"}}>{time}</span>
                   </div>
                   <div style={{padding:"10px 14px"}}>
-                    {items.map((item,i)=>(
-                      <div key={i} style={{fontSize:12,lineHeight:1.9,color:item.startsWith("→")?"#90e090":"#777",fontWeight:item.startsWith("→")?700:400,display:"flex",gap:6}}>
-                        {!item.startsWith("→")&&<span style={{color:"#c8391a",fontSize:10,marginTop:2,flexShrink:0}}>·</span>}
-                        {item}
-                      </div>
-                    ))}
+                    {items.map((item,i)=>(<div key={i} style={{fontSize:12,lineHeight:1.9,color:item.startsWith("→")?"#90e090":"#666",fontWeight:item.startsWith("→")?700:400,display:"flex",gap:6}}>{!item.startsWith("→")&&<span style={{color:"#c8391a",fontSize:10,marginTop:2,flexShrink:0}}>·</span>}{item}</div>))}
                   </div>
                 </div>
               ))}
@@ -348,8 +372,8 @@ function App() {
             <div style={{background:"#111",borderRadius:12,border:"1px solid #1a1a1a",overflow:"hidden"}}>
               {DAILY_SKELETON.map((row,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:i<DAILY_SKELETON.length-1?"1px solid #161616":"none"}}>
-                  <div style={{fontFamily:"monospace",fontSize:10,color:"#c8391a",whiteSpace:"nowrap",minWidth:72,borderRight:"2px solid #1e1e1e",paddingRight:10}}>{row.time}</div>
-                  <div style={{flex:1,fontSize:12,color:"#aaa",lineHeight:1.4}}>{row.text}</div>
+                  <div style={{fontFamily:"monospace",fontSize:10,color:"#c8391a",whiteSpace:"nowrap",minWidth:76,borderRight:"2px solid #1e1e1e",paddingRight:10}}>{row.time}</div>
+                  <div style={{flex:1,fontSize:12,color:"#888",lineHeight:1.4}}>{row.text}</div>
                   <div style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,background:row.tagBg,color:row.tagColor,whiteSpace:"nowrap",flexShrink:0}}>{row.tag}</div>
                 </div>
               ))}
@@ -361,46 +385,39 @@ function App() {
               {PRINCIPLES.map(({n,text})=>(
                 <div key={n} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"12px 16px",background:"#111",borderRadius:10,border:"1px solid #1a1a1a"}}>
                   <span style={{fontFamily:"monospace",fontSize:12,color:"#c8391a",fontWeight:700,flexShrink:0,marginTop:1}}>{n}</span>
-                  <span style={{fontSize:13,color:"#aaa",lineHeight:1.5}}>{text}</span>
+                  <span style={{fontSize:13,color:"#888",lineHeight:1.5}}>{text}</span>
                 </div>
               ))}
-              <div style={{marginTop:6,padding:"14px 16px",background:"#0a140a",border:"1px solid #1a2e1a",borderRadius:10,fontSize:12,color:"#4ade80",lineHeight:1.7,fontStyle:"italic"}}>
-                "루틴은 의지로 지키는 게 아니다.<br/>환경을 세팅해두면 뇌가 자동으로 따라간다."
+              <div style={{marginTop:6,padding:"14px 16px",background:"#0a140a",border:"1px solid #1a2e1a",borderRadius:10,fontSize:12,color:"#4ade80",lineHeight:1.8,fontStyle:"italic"}}>
+                "루틴은 의지로 지키는 게 아니다. 환경을 세팅해두면 뇌가 자동으로 따라간다."
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ── TAB: AI 브리핑 ── */}
+      {/* AI 브리핑 */}
       {tab==="brief"&&(
         <div style={{...W.wrap,marginTop:18}}>
           <div style={{background:"#0a140a",border:"1px solid #1a3a1a",borderRadius:14,padding:22,minHeight:160}}>
-            {briefLoading?(
-              <div style={{textAlign:"center",paddingTop:40}}>
-                <div style={{fontSize:24,color:"#4ade80",marginBottom:10,display:"inline-block",animation:"spin 2s linear infinite"}}>✦</div>
-                <div style={{fontSize:12,color:"#2a4a2a"}}>분석 중...</div>
-              </div>
-            ):brief?(
-              <div style={{fontSize:13,lineHeight:2,color:"#c8e6c9",whiteSpace:"pre-wrap"}}>{brief}</div>
-            ):(
-              <div style={{textAlign:"center",color:"#1a3a1a",paddingTop:40,fontSize:12}}>오늘 할 일을 체크한 뒤<br/>브리핑을 요청해보세요</div>
-            )}
+            {briefLoading?(<div style={{textAlign:"center",paddingTop:40}}><div style={{fontSize:24,color:"#4ade80",marginBottom:10,display:"inline-block",animation:"spin 1.5s linear infinite"}}>✦</div><div style={{fontSize:12,color:"#1a3a1a"}}>분석 중...</div></div>)
+            :brief?(<div style={{fontSize:13,lineHeight:2,color:"#c8e6c9",whiteSpace:"pre-wrap"}}>{brief}</div>)
+            :(<div style={{textAlign:"center",color:"#1a3a1a",paddingTop:40,fontSize:12}}>오늘 할 일을 체크한 뒤<br/>브리핑을 요청해보세요</div>)}
           </div>
           <button onClick={fetchBrief} style={{width:"100%",marginTop:10,padding:"11px",background:"#0a140a",border:"1px solid #1a3a1a",borderRadius:10,color:"#4ade80",fontSize:12,cursor:"pointer"}}>↺ 다시 분석</button>
-          <button onClick={()=>setShowKeyInput(true)} style={{width:"100%",marginTop:8,padding:"10px",background:"transparent",border:"1px solid #1a1a1a",borderRadius:10,color:"#333",fontSize:11,cursor:"pointer"}}>⚙ API 키 변경</button>
+          <button onClick={()=>setShowKey(true)} style={{width:"100%",marginTop:8,padding:"10px",background:"transparent",border:"1px solid #1a1a1a",borderRadius:10,color:"#2a2a2a",fontSize:11,cursor:"pointer"}}>⚙ API 키 설정</button>
         </div>
       )}
 
-      {/* ── TAB: 기록 ── */}
+      {/* 기록 */}
       {tab==="history"&&(
         <div style={{...W.wrap,marginTop:18}}>
-          <div style={{fontSize:11,color:"#333",marginBottom:14,textAlign:"center"}}>저장된 기록 {Object.keys(history).length}일</div>
+          <div style={{fontSize:11,color:"#2a2a2a",marginBottom:14,textAlign:"center"}}>저장된 기록 {Object.keys(history).length}일 · ☁️ 클라우드 동기화</div>
           {Object.entries(history).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30).map(([key,val])=>{
             const d=new Date(key);
             return(
               <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 15px",background:"#111",borderRadius:10,border:"1px solid #161616",marginBottom:7}}>
-                <div style={{fontSize:12,color:"#888"}}>{d.getMonth()+1}/{d.getDate()} ({DAYS[d.getDay()]})</div>
+                <div style={{fontSize:12,color:"#666"}}>{d.getMonth()+1}/{d.getDate()} ({DAYS[d.getDay()]})</div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{height:4,width:60,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${val.progress}%`,background:val.completed?"#4ade80":"#f97316",borderRadius:99}}/>
@@ -413,17 +430,14 @@ function App() {
               </div>
             );
           })}
-          {Object.keys(history).length===0&&(
-            <div style={{textAlign:"center",color:"#222",paddingTop:40,fontSize:12}}>아직 기록이 없어요.<br/>오늘부터 시작해보세요.</div>
-          )}
+          {Object.keys(history).length===0&&(<div style={{textAlign:"center",color:"#1e1e1e",paddingTop:40,fontSize:12}}>아직 기록이 없어요.<br/>오늘부터 시작해보세요.</div>)}
         </div>
       )}
     </div>
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
